@@ -32,22 +32,30 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   final DataSourceAPI dataSource = DataSourceAPI();
-  String currentVerse = "";
+  String error = "";
+  VerseModel? currentVerse;
+  bool isLoading = false;
 
   getRandomVerse() async {
+    setState(() {
+      isLoading = true;
+    });
     final result = await dataSource.getRandomVerse();
     result.fold(
       (l) {
         setState(() {
-          currentVerse = l;
+          error = l;
         });
       },
       (r) {
         setState(() {
-          currentVerse = r.text ?? "";
+          currentVerse = r;
         });
       },
     );
+    setState(() {
+      isLoading = false;
+    });
   }
 
   @override
@@ -59,24 +67,40 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Center(
-            child: SingleChildScrollView(
-              // mainAxisAlignment: MainAxisAlignment.center,
-              // children: <Widget>[
-              child: Text(
-                currentVerse,
-              ),
-              // ],
-            ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Center(
+          child: Builder(
+            builder: (c) {
+              if (isLoading) {
+                return const CircularProgressIndicator();
+              } else {
+                return SingleChildScrollView(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      if (currentVerse != null)
+                        Text(
+                          "${currentVerse!.book!.name!} - ${currentVerse!.chapter!}:${currentVerse!.number}",
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      Text(
+                        currentVerse?.text ?? error,
+                      ),
+                    ],
+                  ),
+                );
+              }
+            },
           ),
         ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: getRandomVerse,
-        tooltip: 'Increment',
+        tooltip: 'Buscar novamente',
         child: const Icon(Icons.replay_outlined),
       ),
     );
